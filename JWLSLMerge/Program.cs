@@ -1,83 +1,110 @@
+using System;
+using System.IO;
+using System.Linq;
+using System.Collections.Generic;
+
 namespace JWLSLMerge
 {
     internal class Program
     {
         static void Main(string[] args)
         {
-            // Obtém todos os arquivos .jwlibrary na pasta do executável
-            string[] jwlibraryFiles = null;
+            // Obtém a lista de arquivos .jwlibrary com base nos argumentos fornecidos
+            string[] jwlibraryFiles = GetJWLibraryFiles(args);
 
+            // Verifica se há pelo menos dois arquivos .jwlibrary para mesclar
+            if (jwlibraryFiles.Length < 2)
+            {
+                Console.WriteLine("Please ensure there are at least two .jwlibrary files available.");
+                Console.WriteLine("Type -help for more information.");
+                Environment.ExitCode = 1; // Define o código de saída como 1 (erro)
+                return;
+            }
+
+            // Inicializa o processo de mesclagem
+            RunMergeService(jwlibraryFiles);
+        }
+
+        // Obtém a lista de arquivos .jwlibrary com base nos argumentos fornecidos
+        private static string[] GetJWLibraryFiles(string[] args)
+        {
             if (args.Length == 0)
             {
-                // Se nenhum argumento for fornecido, obtém todos os arquivos .jwlibrary na pasta do executável
-                jwlibraryFiles = Directory.GetFiles(AppDomain.CurrentDomain.BaseDirectory, "*.jwlibrary");
+                // Se nenhum argumento for fornecido, obtém os arquivos .jwlibrary do diretório atual
+                return GetFilesInCurrentDirectory("*.jwlibrary");
             }
             else
             {
-                switch (args[0].ToLower().Trim())
+                string option = args[0].ToLower().Trim();
+
+                switch (option)
                 {
                     case "-help":
-                        // Mostra informações de ajuda sobre como usar o programa
                         ShowHelp();
-                        return;
+                        Environment.ExitCode = 0; // Define o código de saída como 0 (sucesso)
+                        break;
 
                     case "-folder":
                     case "-files":
-                        // Obtém os arquivos .jwlibrary com base nos argumentos fornecidos
-                        jwlibraryFiles = GetFiles(args);
-                        break;
+                        return GetFiles(args.Skip(1).ToArray());
 
                     default:
+                        Console.WriteLine("Invalid arguments. Type -help for more information.");
+                        Environment.ExitCode = 1; // Define o código de saída como 1 (erro)
                         break;
                 }
             }
 
-            // Verifica se há pelo menos dois arquivos .jwlibrary para mesclar
-            if (jwlibraryFiles == null || jwlibraryFiles.Length < 2)
-            {
-                // Se não houver arquivos suficientes, exibe uma mensagem de erro
-                Console.WriteLine("Please make sure there are at least two .jwlibrary files in the executable folder.");
-                Console.WriteLine("Type -help for more information.");
-                return;
-            }
-
-            // Inicializa o serviço de mesclagem e define um manipulador de eventos para mensagens
-            MergeService mergeService = new MergeService();
-            mergeService.Message += MergeService_Message;
-            mergeService.Run(jwlibraryFiles);
+            return Array.Empty<string>();
         }
 
-        // Obtém a lista de arquivos .jwlibrary com base nos argumentos fornecidos
-        private static string[] GetFiles(string[] args)
+        // Obtém a lista de arquivos .jwlibrary no diretório atual com base no padrão de busca
+        private static string[] GetFilesInCurrentDirectory(string searchPattern)
         {
-            if (args.Length == 1)
-                Console.WriteLine("Invalid arguments. Type -help for more information.");
+            return Directory.GetFiles(AppDomain.CurrentDomain.BaseDirectory, searchPattern);
+        }
 
-            if (args[0].ToLower().Equals("-folder"))
+        // Obtém a lista de arquivos .jwlibrary com base nos caminhos fornecidos
+        private static string[] GetFiles(string[] paths)
+        {
+            List<string> validFiles = new List<string>();
+
+            foreach (string path in paths)
             {
-                // Retorna os arquivos .jwlibrary da pasta especificada
-                return Directory.GetFiles(args[1], "*.jwlibrary");
+                if (File.Exists(path) && Path.GetExtension(path.ToLower()) == ".jwlibrary")
+                {
+                    validFiles.Add(path);
+                }
+                else
+                {
+                    Console.WriteLine($"Invalid file path: {path}");
+                    Environment.ExitCode = 1; // Define o código de saída como 1 (erro)
+                }
             }
-            else
-            {
-                // Retorna a lista de arquivos .jwlibrary fornecida como argumentos
-                return args
-                    .Skip(1)
-                    .Where(p => File.Exists(p) && Path.GetExtension(p.ToLower()) == ".jwlibrary")
-                    .ToArray();
-            }
+
+            return validFiles.ToArray();
+        }
+
+        // Inicializa o processo de mesclagem com os arquivos fornecidos
+        private static void RunMergeService(string[] files)
+        {
+            MergeService mergeService = new MergeService();
+            mergeService.Message += MergeService_Message;
+            mergeService.Run(files);
         }
 
         // Exibe informações de ajuda sobre como usar o programa
         private static void ShowHelp()
         {
-            Console.WriteLine("To merge all the .jwlibrary files, just place them in this same directory and run the command: JWLSLMerge.exe");
+            Console.WriteLine("JWLSLMerge - JW Library Files Merger");
             Console.WriteLine("");
-            Console.WriteLine("If you wish, you can define the location of the files through the -folder parameter followed by the directory where the files are located.");
-            Console.WriteLine("Example: JWLSLMerge.exe -folder \"c:\\my backups\"");
+            Console.WriteLine("Usage:");
+            Console.WriteLine("  JWLSLMerge.exe");
+            Console.WriteLine("  JWLSLMerge.exe -folder <folder_path>");
+            Console.WriteLine("  JWLSLMerge.exe -files <file_path> [<file_path> ...]");
             Console.WriteLine("");
-            Console.WriteLine("If you want to specify the files you want to merge, use the -files parameter followed by the full path of each file.");
-            Console.WriteLine("Example: JWLSLMerge.exe -files \"c:\\my backups\\theme_003.jwlibrary\" \"c:\\my backups\\theme_157.jwlibrary\"");
+            Console.WriteLine("Description:");
+            Console.WriteLine("  JWLSLMerge is a tool for merging JW Library files (.jwlibrary) for backup or sharing.");
         }
 
         // Manipulador de eventos para exibir mensagens do serviço de mesclagem
