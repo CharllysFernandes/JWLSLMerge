@@ -82,11 +82,58 @@ namespace JWLSLMerge
 
                 // Criar o arquivo JW Library.
                 createJWLibraryFile();
+
+                // Limpar as pastas temporárias criadas durante o processo.
+                CleanUpTempDirectories();
+
+                // Limpar a pasta de destino após o processo.
+                CleanUpTargetDirectory();
             }
             catch (Exception ex)
             {
                 // Informar em caso de erro durante o processo.
                 sendMessage($"An error occurred while processing. Detail: {ex.Message}");
+            }
+        }
+
+        private void CleanUpTempDirectories()
+        {
+            try
+            {
+                // Deletar os arquivos na pasta temporária de extração.
+                string tempDir = Environment.GetTempDirectory();
+                foreach (var file in Directory.GetFiles(tempDir))
+                {
+                    File.Delete(file);
+                }
+
+                // Deletar a pasta temporária de extração.
+                Directory.Delete(tempDir);
+            }
+            catch (Exception ex)
+            {
+                // Em caso de erro durante a limpeza, imprimir a mensagem de erro no console.
+                Console.WriteLine($"Error during cleanup: {ex.Message}");
+            }
+        }
+
+        private void CleanUpTargetDirectory()
+        {
+            try
+            {
+                // Deletar os arquivos na pasta de destino.
+                foreach (var file in Directory.GetFiles(targetPath))
+                {
+                    File.Delete(file);
+                }
+
+                // Deletar a pasta de destino.
+                Directory.Delete(targetPath);
+            }
+            catch (Exception ex)
+            {
+                // Em caso de erro durante a limpeza, imprimir a mensagem de erro no console.
+                Console.WriteLine($"Error during cleanup: {ex.Message}");
             }
         }
 
