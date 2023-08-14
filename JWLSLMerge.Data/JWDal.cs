@@ -1,19 +1,34 @@
 ﻿using Dapper;
 using JWLSLMerge.Data.Attributes;
+using System;
+using System.Collections.Generic;
 using System.Data;
 using System.Data.SQLite;
+using System.Linq;
 
 namespace JWLSLMerge.Data
 {
+    /// <summary>
+    /// Classe que lida com operações de acesso a dados usando Dapper para SQLite.
+    /// </summary>
     public class JWDal
     {
         private string connectionString;
 
+        /// <summary>
+        /// Inicializa uma nova instância da classe JWDal com o caminho do banco de dados.
+        /// </summary>
+        /// <param name="dbPath">O caminho para o banco de dados SQLite.</param>
         public JWDal(string dbPath)
         {
             connectionString = $"Data Source={dbPath}";
         }
 
+        /// <summary>
+        /// Obtém uma lista de registros da tabela especificada.
+        /// </summary>
+        /// <typeparam name="T">O tipo de objeto representando a tabela.</typeparam>
+        /// <returns>Uma coleção de registros da tabela.</returns>
         public IEnumerable<T> TableList<T>()
         {
             using (IDbConnection cnn = new SQLiteConnection(connectionString))
@@ -22,6 +37,14 @@ namespace JWLSLMerge.Data
             }
         }
 
+        /// <summary>
+        /// Obtém o primeiro registro que corresponde aos critérios de busca.
+        /// </summary>
+        /// <typeparam name="T">O tipo de objeto representando a tabela.</typeparam>
+        /// <param name="item">O objeto que contém os critérios de busca.</param>
+        /// <param name="FieldNames">Os nomes dos campos para a cláusula WHERE.</param>
+        /// <param name="SetEmptyWhenNull">Indica se campos nulos devem ser definidos como vazios.</param>
+        /// <returns>O primeiro registro correspondente aos critérios de busca ou null se não encontrado.</returns>
         public T? GetFirst<T>(T item, string[] FieldNames, bool SetEmptyWhenNull = false)
         {
             using (IDbConnection con = new SQLiteConnection(connectionString))
@@ -32,6 +55,14 @@ namespace JWLSLMerge.Data
             }
         }
 
+        /// <summary>
+        /// Verifica se um registro corresponde aos critérios de busca.
+        /// </summary>
+        /// <typeparam name="T">O tipo de objeto representando a tabela.</typeparam>
+        /// <param name="item">O objeto que contém os critérios de busca.</param>
+        /// <param name="FieldNames">Os nomes dos campos para a cláusula WHERE.</param>
+        /// <param name="SetEmptyWhenNull">Indica se campos nulos devem ser definidos como vazios.</param>
+        /// <returns>true se o registro correspondente existe; false caso contrário.</returns>
         public bool ItemExists<T>(T item, string[] FieldNames, bool SetEmptyWhenNull = false)
         {
             using (IDbConnection con = new SQLiteConnection(connectionString))
@@ -42,6 +73,12 @@ namespace JWLSLMerge.Data
             }
         }
 
+        /// <summary>
+        /// Insere um novo registro na tabela.
+        /// </summary>
+        /// <typeparam name="T">O tipo de objeto representando a tabela.</typeparam>
+        /// <param name="item">O objeto que contém os valores a serem inseridos.</param>
+        /// <returns>O ID do registro inserido.</returns>
         public int ItemInsert<T>(T item)
         {
             using (IDbConnection con = new SQLiteConnection(connectionString))
@@ -55,6 +92,10 @@ namespace JWLSLMerge.Data
             }
         }
 
+        /// <summary>
+        /// Define a última modificação no banco de dados.
+        /// </summary>
+        /// <returns>A data e hora da última modificação.</returns>
         public string SetLastModification()
         {
             string dt = DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ssZ");
@@ -110,4 +151,3 @@ namespace JWLSLMerge.Data
         }
     }
 }
-
