@@ -1,9 +1,25 @@
+using System;
+using System.Diagnostics;
+using System.IO;
+using System.Linq;
+
 namespace JWLSLMerge
 {
     internal class Program
     {
         static void Main(string[] args)
         {
+            // Verifica se o .NET 8.0 está instalado
+            if (!IsDotNetVersion8Installed())
+            {
+                Console.WriteLine("The .NET 8.0 SDK was not found on this computer.");
+                Console.WriteLine("This application requires .NET 8.0 or higher to run.");
+                Console.WriteLine("Please download and install it from: https://dotnet.microsoft.com/en-us/download/dotnet/8.0");
+                Console.WriteLine("Press any key to exit...");
+                Console.ReadKey(); // Pausa para que o usuário possa ler a mensagem
+                return;
+            }
+
             // Obtém todos os arquivos .jwlibrary na pasta do executável
             string[] jwlibraryFiles = null;
 
@@ -39,6 +55,36 @@ namespace JWLSLMerge
             MergeService mergeService = new MergeService();
             mergeService.Message += MergeService_Message;
             mergeService.Run(jwlibraryFiles);
+        }
+
+        private static bool IsDotNetVersion8Installed()
+        {
+            try
+            {
+                // Executa o comando para obter a versão do SDK
+                var process = Process.Start(new ProcessStartInfo
+                {
+                    FileName = "dotnet",
+                    Arguments = "--version",
+                    RedirectStandardOutput = true,
+                    UseShellExecute = false,
+                    CreateNoWindow = true
+                });
+
+                if (process == null)
+                    return false;
+
+                var version = process.StandardOutput.ReadToEnd().Trim();
+                process.WaitForExit();
+
+                // Verifica se a versão começa com 8.
+                return version.StartsWith("8.");
+            }
+            catch
+            {
+                // Se ocorrer qualquer erro, assume-se que a versão não está instalada.
+                return false;
+            }
         }
 
         private static string[] GetFiles(string[] args)
